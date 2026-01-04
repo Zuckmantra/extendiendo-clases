@@ -1,29 +1,52 @@
-class ListaDeCosas {
+import { orderBy, remove } from 'lodash';
+import fs from 'node:fs';
+import path from 'node:path';
+class ListaDeCosas<T> {
   name: string;
-  cosas: any[] = [];
+  cosas: T[] = [];
   constructor(name: string) {
-    // nombre de esta lista
     this.name = name;
   }
-  add(nuevaCosa) {
+  add(nuevaCosa: T) {
     this.cosas.push(nuevaCosa);
   }
-  getCosas() {
+  getCosas(): T[] {
     return this.cosas;
   }
 }
 
-class Product {
+type Product = {
   name: string;
   price: number;
   id: number;
-  constructor(name: string, price: number, id: number) {
-    this.name = name;
-    this.price = price;
-    this.id = id;
+};
+
+class ListaDeProductos extends ListaDeCosas<Product> {
+  constructor(name: string) {
+    super(name);
+    // Cargamos el JSON de productos desde la carpeta original para que funcione tanto en src como en dist
+    const productsPath = path.join(__dirname, '../src/products.json');
+    const productJson = fs.readFileSync(productsPath, 'utf-8');
+    const data: Product[] = JSON.parse(productJson);
+    data.forEach((product) => this.add(product));
+  }
+
+  addProduct(product: Product) {
+    this.add(product);
+  }
+
+  getProduct(id: number): Product | undefined {
+    const cosas = this.getCosas();
+    return cosas.find((c) => c.id === id);
+  }
+
+  removeProduct(id: number) {
+    remove(this.cosas, (c) => c.id === id);
+  }
+
+  getSortedByPrice(order: 'asc' | 'desc'): Product[] {
+    return orderBy(this.cosas, ['price'], [order]);
   }
 }
-
-class ListaDeProductos extends ListaDeCosas {}
 
 export { ListaDeProductos, Product };
